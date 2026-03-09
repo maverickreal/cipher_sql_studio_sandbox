@@ -1,0 +1,23 @@
+{
+  "name": "cipher-sql-studio-sandbox-executor",
+  "version": "1.0.0",
+  "description": "Sandbox SQL executor worker for CipherSqlStudio",
+  "main": "dist/worker.js",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "build": "tsc",
+    "start": "node dist/worker.js"
+  },
+  "dependencies": {
+    "bullmq": "^5.70.4",
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "@types/pg": "^8.15.4",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}
