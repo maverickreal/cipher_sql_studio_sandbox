@@ -3,7 +3,7 @@ import {
   UserSqlExecJobResult,
   UserSqlExecMode,
 } from "../types";
-import DbPool from "../db";
+import DbPoolClient from "../db";
 import { Job } from "bullmq";
 import { PoolClient } from "pg";
 import {
@@ -11,7 +11,7 @@ import {
   USER_SQL_EXEC_MAX_TIME,
 } from "../utils/constants";
 
-// Intentionally skipping catch in finally blocks; should throw IMO.
+
 class UserSqlCodeExecutor {
   static async executeReadOnlyMode(
     client: PoolClient,
@@ -21,13 +21,12 @@ class UserSqlCodeExecutor {
     try {
       const escapedSchemaName = client.escapeIdentifier(assignmentSchemaId);
 
-      await client.query(`
-                BEGIN READ ONLY;
-                SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
-                SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB';
-                SET LOCAL search_path TO ${escapedSchemaName}
-            `);
-
+      await client.query(
+        `BEGIN READ ONLY;
+        SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
+        SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB';
+        SET LOCAL search_path TO ${escapedSchemaName}`
+      );
       const start = performance.now();
 
       const result = await client.query(userSqlCode);
@@ -57,11 +56,11 @@ class UserSqlCodeExecutor {
     userSqlCode: string,
   ): Promise<UserSqlExecJobResult> {
     try {
-      await client.query(`
-                BEGIN;
-                SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
-                SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB'
-            `);
+      await client.query(
+        `BEGIN;
+        SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
+        SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB'`
+      );
 
       const escapedSchemaName = client.escapeIdentifier(assignmentSchemaId);
 
@@ -75,20 +74,22 @@ class UserSqlCodeExecutor {
         (row) => row.table_name,
       );
 
-      if (tableNames.length > 0) {
-        const mergedTempTableQueries = tableNames
-          .map((tableName) => {
-            tableName = client.escapeIdentifier(tableName);
+      const mergedTempTableQueries = tableNames
+        .map((tableName) => {
+          tableName = client.escapeIdentifier(tableName);
 
-            return `CREATE TEMPORARY TABLE ${tableName}
+          return (
+            `CREATE TEMPORARY TABLE ${tableName}
             (LIKE ${escapedSchemaName}.${tableName} INCLUDING ALL)
             ON COMMIT DROP;
 
             INSERT INTO ${tableName}
-            SELECT * FROM ${escapedSchemaName}.${tableName}`;
-          })
-          .join(";\n");
+            SELECT * FROM ${escapedSchemaName}.${tableName}`
+          );
+        })
+        .join(";\n");
 
+      if (mergedTempTableQueries.length > 0) {
         await client.query(mergedTempTableQueries);
       }
       await client.query(
@@ -120,16 +121,17 @@ class UserSqlCodeExecutor {
   static async process(
     job: Job<UserSqlExecJobData, UserSqlExecJobResult>,
   ): Promise<UserSqlExecJobResult> {
-    const dbPoolClientInst = await DbPool.get().connect();
+    const dbPoolClientInst = await DbPoolClient.get().connect();
 
     try {
       const { assignmentId, mode, userSql } = job.data;
       const assignmentSchema = `assignment_schema_${assignmentId}`;
+
       const readOrWriteOp =
         this[
-          mode === UserSqlExecMode.read
-            ? "executeReadOnlyMode"
-            : "executeReadWriteMode"
+        mode === UserSqlExecMode.READ
+          ? "executeReadOnlyMode"
+          : "executeReadWriteMode"
         ];
 
       return await readOrWriteOp(dbPoolClientInst, assignmentSchema, userSql);

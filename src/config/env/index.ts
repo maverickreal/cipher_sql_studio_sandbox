@@ -1,6 +1,7 @@
-import dotenv from "dotenv";
-import { z } from "zod/v4";
+import z from "zod";
 import { UNWANTED_SERVICE_TERMINATION_CODE } from "../../utils/constants";
+import dotenv from "dotenv";
+
 
 dotenv.config();
 

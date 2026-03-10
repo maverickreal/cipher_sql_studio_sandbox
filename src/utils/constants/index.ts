@@ -1,11 +1,17 @@
 // These are the events which I know of / understood;
 // there are potentially more that need be handled in a similar fashion.
-export const KILL_SIGNALS_TO_INTERCEPT_IN_JOB_QUEUE = [
+export const KILL_SIGNALS_TO_INTERCEPT = [
   "SIGTERM",
   "SIGINT",
   "UNHANDLED_REJECTION",
   "UNCAUGHT_EXCEPTION",
 ];
+
+export const enum ENV_MODE {
+  DEV,
+  STAGING,
+  PROD,
+}
 
 export const UNWANTED_SERVICE_TERMINATION_CODE = 1;
 export const PG_POOL_MAX = 5;

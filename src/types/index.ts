@@ -1,13 +1,10 @@
-enum UserSqlExecMode {
-  "read",
-  "write",
-}
+enum UserSqlExecMode { READ, WRITE };
 
 interface UserSqlExecJobData {
   assignmentId: string;
   userSql: string;
   mode: UserSqlExecMode;
-}
+};
 
 interface UserSqlExecJobResult {
   success: boolean;
@@ -16,6 +13,6 @@ interface UserSqlExecJobResult {
   rowCount?: number;
   error?: string;
   executionTimeMs?: number;
-}
+};
 
 export { UserSqlExecJobData, UserSqlExecJobResult, UserSqlExecMode };
