@@ -15,7 +15,7 @@ export const enum ENV_MODE {
 
 export const UNWANTED_SERVICE_TERMINATION_CODE = 1;
 export const PG_POOL_MAX = 5;
-export const USER_SQL_EXEC_MAX_TIME = 5000; // MS
-export const USER_SQL_EXEC_MAX_MEM = 16; // MB
+export const USER_SQL_EXEC_MAX_TIME = 5000; /*ms*/
+export const USER_SQL_EXEC_MAX_MEM = 16; /*mb*/
 export const CONCURRENT_WORKERS_COUNT = 3;
 export const BULL_QUEUE_NAME = "cipher_sql_studio_queue";

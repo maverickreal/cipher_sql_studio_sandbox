@@ -10,7 +10,7 @@ import {
   USER_SQL_EXEC_MAX_MEM,
   USER_SQL_EXEC_MAX_TIME,
 } from "../utils/constants";
-
+import { sanitizePgError } from "../utils";
 
 class UserSqlCodeExecutor {
   static async executeReadOnlyMode(
@@ -25,7 +25,7 @@ class UserSqlCodeExecutor {
         `BEGIN READ ONLY;
         SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
         SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB';
-        SET LOCAL search_path TO ${escapedSchemaName}`
+        SET LOCAL search_path TO ${escapedSchemaName}`,
       );
       const start = performance.now();
 
@@ -43,7 +43,7 @@ class UserSqlCodeExecutor {
     } catch (err) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : `${err}`,
+        error: sanitizePgError(err instanceof Error ? err.message : `${err}`),
       };
     } finally {
       await client.query("ROLLBACK");
@@ -59,7 +59,7 @@ class UserSqlCodeExecutor {
       await client.query(
         `BEGIN;
         SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
-        SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB'`
+        SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB'`,
       );
 
       const escapedSchemaName = client.escapeIdentifier(assignmentSchemaId);
@@ -78,14 +78,12 @@ class UserSqlCodeExecutor {
         .map((tableName) => {
           tableName = client.escapeIdentifier(tableName);
 
-          return (
-            `CREATE TEMPORARY TABLE ${tableName}
+          return `CREATE TEMPORARY TABLE ${tableName}
             (LIKE ${escapedSchemaName}.${tableName} INCLUDING ALL)
             ON COMMIT DROP;
 
             INSERT INTO ${tableName}
-            SELECT * FROM ${escapedSchemaName}.${tableName}`
-          );
+            SELECT * FROM ${escapedSchemaName}.${tableName}`;
         })
         .join(";\n");
 
@@ -111,7 +109,7 @@ class UserSqlCodeExecutor {
     } catch (err) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : `${err}`,
+        error: sanitizePgError(err instanceof Error ? err.message : `${err}`),
       };
     } finally {
       await client.query("ROLLBACK");
@@ -129,9 +127,9 @@ class UserSqlCodeExecutor {
 
       const readOrWriteOp =
         this[
-        mode === UserSqlExecMode.READ
-          ? "executeReadOnlyMode"
-          : "executeReadWriteMode"
+          mode === UserSqlExecMode.READ
+            ? "executeReadOnlyMode"
+            : "executeReadWriteMode"
         ];
 
       return await readOrWriteOp(dbPoolClientInst, assignmentSchema, userSql);

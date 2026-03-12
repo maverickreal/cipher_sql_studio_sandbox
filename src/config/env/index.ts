@@ -1,7 +1,6 @@
-import z from "zod";
+import { z } from "zod/v4";
 import { UNWANTED_SERVICE_TERMINATION_CODE } from "../../utils/constants";
 import dotenv from "dotenv";
-
 
 dotenv.config();
 
@@ -12,6 +11,9 @@ const envVarsSchema = z.object({
   PG_DATABASE: z.string().nonempty().nonoptional(),
   PG_USER: z.string().nonempty().nonoptional(),
   PG_PASSWORD: z.string().nonempty().nonoptional(),
+  LOG_LEVEL: z
+    .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+    .nonoptional(),
 });
 
 const parsedEnvVarsBody = envVarsSchema.safeParse(process.env);

@@ -1,4 +1,7 @@
-enum UserSqlExecMode { READ, WRITE };
+enum UserSqlExecMode {
+  READ = "read",
+  WRITE = "write",
+}
 
 interface UserSqlExecJobData {
   assignmentId: string;

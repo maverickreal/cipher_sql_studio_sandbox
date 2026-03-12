@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import envVars from "../config/env";
+import { envVars } from "../config";
 import { PG_POOL_MAX } from "../utils/constants";
-
+import { logger } from "../config";
 
 class DbPoolClient {
   private static clientInst: Pool | null = null;
@@ -20,7 +20,7 @@ class DbPoolClient {
     });
 
     DbPoolClient.clientInst.on("error", (err: Error) => {
-      console.error("An error occurred in PostgreSQL pool!", err.message);
+      logger.error({ err }, "An error occurred in PostgreSQL pool!");
     });
   }
 
