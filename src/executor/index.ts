@@ -9,8 +9,9 @@ import { PoolClient } from "pg";
 import {
   USER_SQL_EXEC_MAX_MEM,
   USER_SQL_EXEC_MAX_TIME,
+  MAX_RESULT_ROWS,
 } from "../utils/constants";
-import { sanitizePgError } from "../utils";
+import { SQLSanitiser } from "../utils";
 
 class UserSqlCodeExecutor {
   static async executeReadOnlyMode(
@@ -33,17 +34,20 @@ class UserSqlCodeExecutor {
 
       const executionTimeMs = Math.round(performance.now() - start);
 
+      const rowCount = result.rowCount ?? 0;
+
       return {
         executionTimeMs,
-        rowCount: result.rowCount ?? 0,
+        rowCount,
         columns: result.fields.map((field) => field.name),
-        rows: result.rows,
+        rows: result.rows.slice(0, MAX_RESULT_ROWS),
+        truncated: rowCount > MAX_RESULT_ROWS,
         success: true,
       };
     } catch (err) {
       return {
         success: false,
-        error: sanitizePgError(err instanceof Error ? err.message : `${err}`),
+        error: SQLSanitiser(err instanceof Error ? err.message : `${err}`),
       };
     } finally {
       await client.query("ROLLBACK");
@@ -99,17 +103,20 @@ class UserSqlCodeExecutor {
 
       const executionTimeMs = Math.round(performance.now() - start);
 
+      const rowCount = result.rowCount ?? 0;
+
       return {
         success: true,
-        rows: result.rows,
+        rows: result.rows.slice(0, MAX_RESULT_ROWS),
         columns: result.fields.map((col) => col.name),
-        rowCount: result.rowCount ?? 0,
+        rowCount,
+        truncated: rowCount > MAX_RESULT_ROWS,
         executionTimeMs,
       };
     } catch (err) {
       return {
         success: false,
-        error: sanitizePgError(err instanceof Error ? err.message : `${err}`),
+        error: SQLSanitiser(err instanceof Error ? err.message : `${err}`),
       };
     } finally {
       await client.query("ROLLBACK");

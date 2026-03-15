@@ -1,1 +1,1 @@
-export * from "./sql_sanitiser";
+export { default as SQLSanitiser } from "./sql_sanitiser";

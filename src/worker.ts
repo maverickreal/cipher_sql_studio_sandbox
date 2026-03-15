@@ -14,7 +14,12 @@ import { logger } from "./config";
 DbPoolClient.connect();
 
 const workerOpts = {
-  connection: { url: envVars.REDIS_URL },
+  connection: {
+    url: envVars.REDIS_URL,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    lazyConnect: false,
+  },
   concurrency: CONCURRENT_WORKERS_COUNT,
 };
 
