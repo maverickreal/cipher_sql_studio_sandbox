@@ -6,7 +6,6 @@ import {
   KILL_SIGNALS_TO_INTERCEPT,
   UNWANTED_SERVICE_TERMINATION_CODE,
   CONCURRENT_WORKERS_COUNT,
-  BULL_QUEUE_NAME,
 } from "./utils/constants";
 import { envVars } from "./config";
 import { logger } from "./config";
@@ -24,7 +23,7 @@ const workerOpts = {
 };
 
 const userSqlExecWorker = new Worker<UserSqlExecJobData, UserSqlExecJobResult>(
-  BULL_QUEUE_NAME!,
+  envVars.BULLMQ_SQL_QUEUE_NAME!,
   UserSqlCodeExecutor.process,
   workerOpts,
 );
@@ -43,14 +42,14 @@ userSqlExecWorker.on("error", (err: Error) => {
 
 userSqlExecWorker.on("ready", () => {
   logger.info(
-    { queue: BULL_QUEUE_NAME },
+    { queue: envVars.BULLMQ_SQL_QUEUE_NAME },
     "User SQL execution job worker ready",
   );
 });
 
 for (const event of KILL_SIGNALS_TO_INTERCEPT) {
   process.on(event, async () => {
-    logger.info({ queue: BULL_QUEUE_NAME }, "Worker terminated");
+    logger.info({ queue: envVars.BULLMQ_SQL_QUEUE_NAME }, "Worker terminated");
 
     await userSqlExecWorker.close();
     await DbPoolClient.disconnect();

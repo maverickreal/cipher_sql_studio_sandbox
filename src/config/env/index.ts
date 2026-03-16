@@ -8,6 +8,7 @@ const envVarsSchema = z.object({
   PG_DATABASE: z.string().nonempty().nonoptional(),
   PG_USER: z.string().nonempty().nonoptional(),
   PG_PASSWORD: z.string().nonempty().nonoptional(),
+  BULLMQ_SQL_QUEUE_NAME: z.string().nonempty().nonoptional(),
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal"])
     .nonoptional(),

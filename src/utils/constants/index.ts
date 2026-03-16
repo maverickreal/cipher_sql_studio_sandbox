@@ -18,5 +18,4 @@ export const PG_POOL_MAX = 5;
 export const USER_SQL_EXEC_MAX_TIME = 5000; /*ms*/
 export const USER_SQL_EXEC_MAX_MEM = 16; /*mb*/
 export const CONCURRENT_WORKERS_COUNT = 3;
-export const BULL_QUEUE_NAME = "cipher_sql_studio_queue";
 export const MAX_RESULT_ROWS = 100;
