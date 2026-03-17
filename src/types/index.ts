@@ -19,4 +19,20 @@ interface UserSqlExecJobResult {
   executionTimeMs?: number;
 }
 
-export { UserSqlExecJobData, UserSqlExecJobResult, UserSqlExecMode };
+interface AdminAssignmentSeedJobData {
+  assignmentId: string;
+  initSql: string;
+}
+
+interface AdminAssignmentSeedJobResult {
+  success: boolean;
+  error?: string;
+}
+
+export {
+  UserSqlExecJobData,
+  UserSqlExecJobResult,
+  UserSqlExecMode,
+  AdminAssignmentSeedJobData,
+  AdminAssignmentSeedJobResult,
+};

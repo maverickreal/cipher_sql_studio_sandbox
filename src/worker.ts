@@ -1,11 +1,17 @@
 import DbPoolClient from "./db";
-import UserSqlCodeExecutor from "./executor";
-import { UserSqlExecJobData, UserSqlExecJobResult } from "./types";
+import { UserSqlCodeExecutor, AdminSqlCodeExecutor } from "./executor/";
+import {
+  UserSqlExecJobData,
+  UserSqlExecJobResult,
+  AdminAssignmentSeedJobData,
+  AdminAssignmentSeedJobResult,
+} from "./types";
 import { Job, Worker } from "bullmq";
 import {
   KILL_SIGNALS_TO_INTERCEPT,
   UNWANTED_SERVICE_TERMINATION_CODE,
   CONCURRENT_WORKERS_COUNT,
+  ADMIN_ASSIGNMENT_SEED_JOB_NAME,
 } from "./utils/constants";
 import { envVars } from "./config";
 import { logger } from "./config";
@@ -22,38 +28,45 @@ const workerOpts = {
   concurrency: CONCURRENT_WORKERS_COUNT,
 };
 
-const userSqlExecWorker = new Worker<UserSqlExecJobData, UserSqlExecJobResult>(
+const BullMQWorker = new Worker<
+  UserSqlExecJobData | AdminAssignmentSeedJobData,
+  UserSqlExecJobResult | AdminAssignmentSeedJobResult
+>(
   envVars.BULLMQ_SQL_QUEUE_NAME!,
-  UserSqlCodeExecutor.process,
+  (job: Job) =>
+    (job.name === ADMIN_ASSIGNMENT_SEED_JOB_NAME
+      ? AdminSqlCodeExecutor
+      : UserSqlCodeExecutor
+    ).process(job),
   workerOpts,
 );
 
-userSqlExecWorker.on("completed", (job: Job) => {
-  logger.info({ jobId: job.id }, "Successfully finished job");
-});
-
-userSqlExecWorker.on("failed", (job: Job | undefined, err: Error) => {
-  logger.error({ jobId: job?.id, err }, "Unsuccessfully finished job");
-});
-
-userSqlExecWorker.on("error", (err: Error) => {
-  logger.error({ err }, "Exception in worker!");
-});
-
-userSqlExecWorker.on("ready", () => {
+BullMQWorker.on("completed", (job: Job) => {
   logger.info(
-    { queue: envVars.BULLMQ_SQL_QUEUE_NAME },
-    "User SQL execution job worker ready",
+    { jobId: job.id, jobName: job.name },
+    "Successfully finished job",
   );
 });
 
-for (const event of KILL_SIGNALS_TO_INTERCEPT) {
+BullMQWorker.on("failed", (job: Job | undefined, err: Error) => {
+  logger.error({ jobId: job?.id, err }, "Unsuccessfully finished job");
+});
+
+BullMQWorker.on("error", (err: Error) => {
+  logger.error({ err }, "Exception in worker!");
+});
+
+BullMQWorker.on("ready", () => {
+  logger.info({ queue: envVars.BULLMQ_SQL_QUEUE_NAME }, "BullMQ worker ready.");
+});
+
+KILL_SIGNALS_TO_INTERCEPT.forEach((event: string) =>
   process.on(event, async () => {
     logger.info({ queue: envVars.BULLMQ_SQL_QUEUE_NAME }, "Worker terminated");
 
-    await userSqlExecWorker.close();
+    await BullMQWorker.close();
     await DbPoolClient.disconnect();
 
     process.exit(UNWANTED_SERVICE_TERMINATION_CODE);
-  });
-}
+  }),
+);

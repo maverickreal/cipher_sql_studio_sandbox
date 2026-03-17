@@ -5,23 +5,38 @@ import { logger } from "../config";
 
 class DbPoolClient {
   private static clientInst: Pool | null = null;
+  private static adminClientInst: Pool | null = null;
 
   static connect(): void {
-    if (DbPoolClient.clientInst) {
-      return;
-    }
-    DbPoolClient.clientInst = new Pool({
-      max: PG_POOL_MAX,
-      host: envVars.PG_HOST,
-      port: envVars.PG_PORT,
-      user: envVars.PG_USER,
-      password: envVars.PG_PASSWORD,
-      database: envVars.PG_DATABASE,
-    });
+    if (!DbPoolClient.clientInst) {
+      DbPoolClient.clientInst = new Pool({
+        max: PG_POOL_MAX,
+        host: envVars.PG_HOST,
+        port: envVars.PG_PORT,
+        user: envVars.PG_USER,
+        password: envVars.PG_PASSWORD,
+        database: envVars.PG_DATABASE,
+      });
 
-    DbPoolClient.clientInst.on("error", (err: Error) => {
-      logger.error({ err }, "An error occurred in PostgreSQL pool!");
-    });
+      DbPoolClient.clientInst.on("error", (err: Error) => {
+        logger.error({ err }, "An error occurred in PostgreSQL pool!");
+      });
+    }
+
+    if (!DbPoolClient.adminClientInst) {
+      DbPoolClient.adminClientInst = new Pool({
+        max: PG_POOL_MAX,
+        host: envVars.PG_HOST,
+        port: envVars.PG_PORT,
+        user: envVars.ADMIN_PG_USER,
+        password: envVars.ADMIN_PG_PASSWORD,
+        database: envVars.PG_DATABASE,
+      });
+
+      DbPoolClient.adminClientInst.on("error", (err: Error) => {
+        logger.error({ err }, "An error occurred in Admin PostgreSQL pool!");
+      });
+    }
   }
 
   static get(): Pool {
@@ -32,10 +47,22 @@ class DbPoolClient {
     return DbPoolClient.clientInst;
   }
 
+  static getAdmin(): Pool {
+    if (!DbPoolClient.adminClientInst) {
+      throw new Error("Admin PostreSQL client instance from null pool seeked!");
+    }
+
+    return DbPoolClient.adminClientInst;
+  }
+
   static async disconnect() {
     if (DbPoolClient.clientInst) {
       await DbPoolClient.clientInst.end();
       DbPoolClient.clientInst = null;
+    }
+    if (DbPoolClient.adminClientInst) {
+      await DbPoolClient.adminClientInst.end();
+      DbPoolClient.adminClientInst = null;
     }
   }
 }
