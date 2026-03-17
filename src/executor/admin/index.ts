@@ -21,9 +21,15 @@ class AdminSqlCodeExecutor {
       await dbPoolClientInst.query(
         `BEGIN;
         CREATE SCHEMA IF NOT EXISTS ${escapedSchemaName};
-        SET LOCAL search_path TO ${escapedSchemaName};
-        ${initSql.trim() ? initSql : ""}
-        GRANT USAGE ON SCHEMA ${escapedSchemaName} TO sandbox_student;
+        SET LOCAL search_path TO ${escapedSchemaName};`,
+      );
+
+      if (initSql.trim()) {
+        await dbPoolClientInst.query(initSql);
+      }
+
+      await dbPoolClientInst.query(
+        `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO sandbox_student;
         GRANT SELECT ON ALL TABLES IN SCHEMA ${escapedSchemaName} TO sandbox_student;
         ALTER DEFAULT PRIVILEGES IN SCHEMA ${escapedSchemaName} GRANT SELECT ON TABLES TO sandbox_student;
         REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA ${escapedSchemaName} FROM sandbox_student;
