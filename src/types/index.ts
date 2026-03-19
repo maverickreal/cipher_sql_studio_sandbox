@@ -7,10 +7,13 @@ interface UserSqlExecJobData {
   assignmentId: string;
   userSql: string;
   mode: UserSqlExecMode;
+  solutionSql?: string;
+  validationSql?: string;
 }
 
 interface UserSqlExecJobResult {
   success: boolean;
+  passed?: boolean;
   rows?: Array<Record<string, unknown>>;
   columns?: Array<string>;
   rowCount?: number;

@@ -1,5 +1,3 @@
-// These are the events which I know of / understood;
-// there are potentially more that need be handled in a similar fashion.
 export const KILL_SIGNALS_TO_INTERCEPT = [
   "SIGTERM",
   "SIGINT",
@@ -21,3 +19,4 @@ export const CONCURRENT_WORKERS_COUNT = 3;
 export const MAX_RESULT_ROWS = 100;
 export const ADMIN_ASSIGNMENT_SEED_JOB_NAME =
   "client_sql_studio_admin_assignment_seed";
+export const SANDBOX_DB_SCHEMA_PREFIX = "assignment_schema_";

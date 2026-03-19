@@ -4,7 +4,8 @@ import {
 } from "../../types";
 import DbPoolClient from "../../db";
 import { Job } from "bullmq";
-import { SQLSanitiser } from "../../utils";
+import { getSandboxDBSchemaIdForAssignment, SQLSanitiser } from "../../utils";
+import { envVars } from "../../config";
 
 class AdminSqlCodeExecutor {
   static async process(
@@ -15,7 +16,7 @@ class AdminSqlCodeExecutor {
     try {
       const { assignmentId, initSql } = job.data;
       const escapedSchemaName = dbPoolClientInst.escapeIdentifier(
-        `assignment_schema_${assignmentId}`,
+        getSandboxDBSchemaIdForAssignment(assignmentId),
       );
 
       await dbPoolClientInst.query(
@@ -29,11 +30,11 @@ class AdminSqlCodeExecutor {
       }
 
       await dbPoolClientInst.query(
-        `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO sandbox_student;
-        GRANT SELECT ON ALL TABLES IN SCHEMA ${escapedSchemaName} TO sandbox_student;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA ${escapedSchemaName} GRANT SELECT ON TABLES TO sandbox_student;
-        REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA ${escapedSchemaName} FROM sandbox_student;
-        REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ${escapedSchemaName} FROM sandbox_student;
+        `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO ${envVars.PG_USER};
+        GRANT SELECT ON ALL TABLES IN SCHEMA ${escapedSchemaName} TO ${envVars.PG_USER};
+        ALTER DEFAULT PRIVILEGES IN SCHEMA ${escapedSchemaName} GRANT SELECT ON TABLES TO ${envVars.PG_USER};
+        REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA ${escapedSchemaName} FROM ${envVars.PG_USER};
+        REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ${escapedSchemaName} FROM ${envVars.PG_USER};
         COMMIT;`,
       );
 

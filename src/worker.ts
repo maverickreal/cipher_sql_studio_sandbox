@@ -12,7 +12,7 @@ import {
   UNWANTED_SERVICE_TERMINATION_CODE,
   CONCURRENT_WORKERS_COUNT,
   ADMIN_ASSIGNMENT_SEED_JOB_NAME,
-} from "./utils/constants";
+} from "./utils";
 import { envVars } from "./config";
 import { logger } from "./config";
 

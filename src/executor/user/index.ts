@@ -10,14 +10,14 @@ import {
   USER_SQL_EXEC_MAX_MEM,
   USER_SQL_EXEC_MAX_TIME,
   MAX_RESULT_ROWS,
-} from "../../utils/constants";
-import { SQLSanitiser } from "../../utils";
+} from "../../utils";
+import { getSandboxDBSchemaIdForAssignment, SQLSanitiser } from "../../utils";
 
 class UserSqlCodeExecutor {
   static async executeReadOnlyMode(
     client: PoolClient,
     assignmentSchemaId: string,
-    userSqlCode: string,
+    jobData: UserSqlExecJobData,
   ): Promise<UserSqlExecJobResult> {
     try {
       const escapedSchemaName = client.escapeIdentifier(assignmentSchemaId);
@@ -30,11 +30,19 @@ class UserSqlCodeExecutor {
       );
       const start = performance.now();
 
-      const result = await client.query(userSqlCode);
+      const result = await client.query(jobData.userSql);
 
       const executionTimeMs = Math.round(performance.now() - start);
 
       const rowCount = result.rowCount ?? 0;
+
+      let passed: boolean | undefined = undefined;
+
+      if (jobData.solutionSql) {
+        const solutionResult = await client.query(jobData.solutionSql);
+        passed =
+          JSON.stringify(result.rows) === JSON.stringify(solutionResult.rows);
+      }
 
       return {
         executionTimeMs,
@@ -43,6 +51,7 @@ class UserSqlCodeExecutor {
         rows: result.rows.slice(0, MAX_RESULT_ROWS),
         truncated: rowCount > MAX_RESULT_ROWS,
         success: true,
+        passed,
       };
     } catch (err) {
       return {
@@ -57,7 +66,7 @@ class UserSqlCodeExecutor {
   static async executeReadWriteMode(
     client: PoolClient,
     assignmentSchemaId: string,
-    userSqlCode: string,
+    jobData: UserSqlExecJobData,
   ): Promise<UserSqlExecJobResult> {
     try {
       await client.query(
@@ -99,11 +108,41 @@ class UserSqlCodeExecutor {
       );
       const start = performance.now();
 
-      const result = await client.query(userSqlCode);
+      const result = await client.query(jobData.userSql);
 
       const executionTimeMs = Math.round(performance.now() - start);
 
       const rowCount = result.rowCount ?? 0;
+
+      let passed: boolean | undefined = undefined;
+
+      if (jobData.validationSql && jobData.solutionSql) {
+        const userValidationResult = await client.query(jobData.validationSql);
+
+        await client.query("ROLLBACK");
+
+        await client.query(
+          `BEGIN;
+          SET LOCAL statement_timeout = '${USER_SQL_EXEC_MAX_TIME}';
+          SET LOCAL work_mem = '${USER_SQL_EXEC_MAX_MEM}MB'`,
+        );
+
+        if (mergedTempTableQueries.length > 0) {
+          await client.query(mergedTempTableQueries);
+        }
+        await client.query(
+          `SET LOCAL search_path TO pg_temp, ${escapedSchemaName}`,
+        );
+
+        await client.query(jobData.solutionSql);
+        const solutionValidationResult = await client.query(
+          jobData.validationSql,
+        );
+
+        passed =
+          JSON.stringify(userValidationResult.rows) ===
+          JSON.stringify(solutionValidationResult.rows);
+      }
 
       return {
         success: true,
@@ -112,6 +151,7 @@ class UserSqlCodeExecutor {
         rowCount,
         truncated: rowCount > MAX_RESULT_ROWS,
         executionTimeMs,
+        passed,
       };
     } catch (err) {
       return {
@@ -129,8 +169,8 @@ class UserSqlCodeExecutor {
     const dbPoolClientInst = await DbPoolClient.get().connect();
 
     try {
-      const { assignmentId, mode, userSql } = job.data;
-      const assignmentSchema = `assignment_schema_${assignmentId}`;
+      const { assignmentId, mode } = job.data;
+      const assignmentSchema = getSandboxDBSchemaIdForAssignment(assignmentId);
 
       const readOrWriteOp =
         this[
@@ -139,7 +179,7 @@ class UserSqlCodeExecutor {
             : "executeReadWriteMode"
         ];
 
-      return await readOrWriteOp(dbPoolClientInst, assignmentSchema, userSql);
+      return await readOrWriteOp(dbPoolClientInst, assignmentSchema, job.data);
     } finally {
       dbPoolClientInst.release();
     }

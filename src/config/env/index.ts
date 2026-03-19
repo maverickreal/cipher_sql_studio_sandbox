@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { UNWANTED_SERVICE_TERMINATION_CODE } from "../../utils/constants";
+import { UNWANTED_SERVICE_TERMINATION_CODE } from "../../utils";
 
 const envVarsSchema = z.object({
   REDIS_URL: z.url().nonempty().nonoptional(),

@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { envVars } from "../config";
-import { PG_POOL_MAX } from "../utils/constants";
+import { PG_POOL_MAX } from "../utils";
 import { logger } from "../config";
 
 class DbPoolClient {
