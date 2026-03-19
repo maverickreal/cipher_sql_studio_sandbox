@@ -9,6 +9,7 @@ interface UserSqlExecJobData {
   mode: UserSqlExecMode;
   solutionSql?: string;
   validationSql?: string;
+  orderMatters?: boolean;
 }
 
 interface UserSqlExecJobResult {

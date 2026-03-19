@@ -11,7 +11,11 @@ import {
   USER_SQL_EXEC_MAX_TIME,
   MAX_RESULT_ROWS,
 } from "../../utils";
-import { getSandboxDBSchemaIdForAssignment, SQLSanitiser } from "../../utils";
+import {
+  compareQueryResults,
+  getSandboxDBSchemaIdForAssignment,
+  SQLSanitiser,
+} from "../../utils";
 
 class UserSqlCodeExecutor {
   static async executeReadOnlyMode(
@@ -40,8 +44,11 @@ class UserSqlCodeExecutor {
 
       if (jobData.solutionSql) {
         const solutionResult = await client.query(jobData.solutionSql);
-        passed =
-          JSON.stringify(result.rows) === JSON.stringify(solutionResult.rows);
+        passed = compareQueryResults(
+          result.rows,
+          solutionResult.rows,
+          jobData.orderMatters ?? false,
+        );
       }
 
       return {
@@ -139,9 +146,11 @@ class UserSqlCodeExecutor {
           jobData.validationSql,
         );
 
-        passed =
-          JSON.stringify(userValidationResult.rows) ===
-          JSON.stringify(solutionValidationResult.rows);
+        passed = compareQueryResults(
+          userValidationResult.rows,
+          solutionValidationResult.rows,
+          jobData.orderMatters ?? false,
+        );
       }
 
       return {
@@ -163,9 +172,7 @@ class UserSqlCodeExecutor {
     }
   }
 
-  static async process(
-    job: Job<UserSqlExecJobData, UserSqlExecJobResult>,
-  ): Promise<UserSqlExecJobResult> {
+  static async process(job: Job<UserSqlExecJobData, UserSqlExecJobResult>) {
     const dbPoolClientInst = await DbPoolClient.get().connect();
 
     try {
@@ -179,7 +186,7 @@ class UserSqlCodeExecutor {
             : "executeReadWriteMode"
         ];
 
-      return await readOrWriteOp(dbPoolClientInst, assignmentSchema, job.data);
+      await readOrWriteOp(dbPoolClientInst, assignmentSchema, job.data);
     } finally {
       dbPoolClientInst.release();
     }

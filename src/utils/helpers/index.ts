@@ -27,3 +27,28 @@ export const SQLSanitiser = (msg: string): string => {
 
 export const getSandboxDBSchemaIdForAssignment = (seed: string): string =>
   SANDBOX_DB_SCHEMA_PREFIX + seed;
+
+export const compareQueryResults = (
+  userRows: Array<Record<string, unknown>>,
+  solutionRows: Array<Record<string, unknown>>,
+  orderMatters: boolean,
+): boolean => {
+  if (userRows.length !== solutionRows.length) return false;
+
+  const normalize = (row: Record<string, unknown>) =>
+    JSON.stringify(
+      Object.keys(row)
+        .sort()
+        .map((k) => [k, row[k]]),
+    );
+
+  const userNormalized = userRows.map(normalize);
+  const solutionNormalized = solutionRows.map(normalize);
+
+  if (!orderMatters) {
+    userNormalized.sort();
+    solutionNormalized.sort();
+  }
+
+  return userNormalized.every((row, i) => row === solutionNormalized[i]);
+};

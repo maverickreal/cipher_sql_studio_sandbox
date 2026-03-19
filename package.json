@@ -14,6 +14,7 @@
     "bullmq": "^5.70.4",
     "pg": "^8.20.0",
     "pino": "^10.3.1",
+    "pino-roll": "^4.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

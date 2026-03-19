@@ -29,12 +29,16 @@ class AdminSqlCodeExecutor {
         await dbPoolClientInst.query(initSql);
       }
 
+      const escapedRoleName = dbPoolClientInst.escapeIdentifier(
+        envVars.PG_USER,
+      );
+
       await dbPoolClientInst.query(
-        `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO ${envVars.PG_USER};
-        GRANT SELECT ON ALL TABLES IN SCHEMA ${escapedSchemaName} TO ${envVars.PG_USER};
-        ALTER DEFAULT PRIVILEGES IN SCHEMA ${escapedSchemaName} GRANT SELECT ON TABLES TO ${envVars.PG_USER};
-        REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA ${escapedSchemaName} FROM ${envVars.PG_USER};
-        REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ${escapedSchemaName} FROM ${envVars.PG_USER};
+        `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO ${escapedRoleName};
+        GRANT SELECT ON ALL TABLES IN SCHEMA ${escapedSchemaName} TO ${escapedRoleName};
+        ALTER DEFAULT PRIVILEGES IN SCHEMA ${escapedSchemaName} GRANT SELECT ON TABLES TO ${escapedRoleName};
+        REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA ${escapedSchemaName} FROM ${escapedRoleName};
+        REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ${escapedSchemaName} FROM ${escapedRoleName};
         COMMIT;`,
       );
 

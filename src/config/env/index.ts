@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { UNWANTED_SERVICE_TERMINATION_CODE } from "../../utils";
+import logger from "../log";
 
 const envVarsSchema = z.object({
   REDIS_URL: z.url().nonempty().nonoptional(),
@@ -14,14 +15,16 @@ const envVarsSchema = z.object({
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal"])
     .nonoptional(),
+  ENV_MODE: z.enum(["dev", "staging", "prod"]).nonoptional(),
+  LOG_DIR: z.string().nonempty().nonoptional(),
 });
 
 const parsedEnvVarsBody = envVarsSchema.safeParse(process.env);
 
 if (!parsedEnvVarsBody.success) {
-  console.error(
+  logger.error(
+    { trace: z.prettifyError(parsedEnvVarsBody.error) },
     "Invalid environment variables:",
-    z.prettifyError(parsedEnvVarsBody.error),
   );
   process.exit(UNWANTED_SERVICE_TERMINATION_CODE);
 }
