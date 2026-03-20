@@ -180,7 +180,7 @@ class UserSqlCodeExecutor {
       const assignmentSchema = getSandboxDBSchemaIdForAssignment(assignmentId);
 
       const readOrWriteOp =
-        this[
+        UserSqlCodeExecutor[
           mode === UserSqlExecMode.READ
             ? "executeReadOnlyMode"
             : "executeReadWriteMode"
