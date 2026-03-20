@@ -29,9 +29,7 @@ class AdminSqlCodeExecutor {
         await dbPoolClientInst.query(initSql);
       }
 
-      const escapedRoleName = dbPoolClientInst.escapeIdentifier(
-        envVars.PG_USER,
-      );
+      const escapedRoleName = dbPoolClientInst.escapeIdentifier(envVars.PG_USER,);
 
       await dbPoolClientInst.query(
         `GRANT USAGE ON SCHEMA ${escapedSchemaName} TO ${escapedRoleName};

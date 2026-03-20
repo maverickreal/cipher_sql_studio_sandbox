@@ -186,7 +186,7 @@ class UserSqlCodeExecutor {
             : "executeReadWriteMode"
         ];
 
-      await readOrWriteOp(dbPoolClientInst, assignmentSchema, job.data);
+      return await readOrWriteOp(dbPoolClientInst, assignmentSchema, job.data);
     } finally {
       dbPoolClientInst.release();
     }

@@ -1,5 +1,5 @@
 import pino, { TransportTargetOptions } from "pino";
-import { envVars } from "..";
+import envVars from "../env";
 
 const targets: Array<TransportTargetOptions> = [
   {
@@ -15,7 +15,7 @@ const targets: Array<TransportTargetOptions> = [
   },
 ];
 
-if (envVars.ENV_MODE === "dev") {
+/*if (envVars.ENV_MODE === "dev") {
   targets.push({
     target: "pino-pretty",
     options: {
@@ -25,7 +25,7 @@ if (envVars.ENV_MODE === "dev") {
     },
     level: envVars.LOG_LEVEL,
   });
-}
+}*/
 
 const transport = pino.transport({ targets });
 

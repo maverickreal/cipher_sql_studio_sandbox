@@ -16,6 +16,11 @@ import {
 import { envVars } from "./config";
 import { logger } from "./config";
 
+type SqlExecJob = Job<
+  UserSqlExecJobData | AdminAssignmentSeedJobData,
+  UserSqlExecJobResult | AdminAssignmentSeedJobResult,
+  string
+>;
 DbPoolClient.connect();
 
 const workerOpts = {
@@ -41,15 +46,74 @@ const BullMQWorker = new Worker<
   workerOpts,
 );
 
-BullMQWorker.on("completed", (job: Job) => {
+BullMQWorker.on("completed", (job: SqlExecJob) => {
   logger.info(
     { jobId: job.id, jobName: job.name },
     "Successfully finished job",
   );
 });
 
-BullMQWorker.on("failed", (job: Job | undefined, err: Error) => {
-  logger.error({ jobId: job?.id, err }, "Unsuccessfully finished job");
+BullMQWorker.on("failed", async (job: SqlExecJob | undefined, err: Error) => {
+  if (!job) {
+    logger.error({ err }, "BullMQ job failed with non-existent job object!");
+
+    return;
+  }
+
+  const { attemptsMade } = job;
+  const isLastAdminSeedJobFailure =
+    attemptsMade >= (job.opts.attempts ?? 1) &&
+    job.name === ADMIN_ASSIGNMENT_SEED_JOB_NAME;
+
+  if (!isLastAdminSeedJobFailure) {
+    logger.error(
+      {
+        jobId: job.id,
+        jobName: job.name,
+        err: err.message,
+        attemptsMade,
+      },
+      "An SQL execution job attempt failed!",
+    );
+
+    return;
+  }
+  const assignmentId = job.data.assignmentId;
+
+  logger.error(
+    {
+      jobId: job.id,
+      jobName: job.name,
+      assignmentId,
+      attemptsMade,
+      err: err.message,
+      stack: err.stack,
+    },
+    "All attempts to create assignment schema failed; Initiating cleanup!",
+  );
+
+  try {
+    const response = await fetch(
+      `${envVars.API_GATEWAY_URL}/internal/cleanup/${assignmentId}`,
+      {
+        method: "POST",
+        headers: {
+          "x-internal-api-key": envVars.INTERNAL_API_KEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    logger.info(
+      { assignmentId, status: response.ok ? undefined : response.status },
+      `${response.ok ? "Success" : "Failure"} at cleaning up orphaned assignment!`,
+    );
+  } catch (err) {
+    logger.error(
+      { assignmentId, err },
+      "Request to API Gateway internal cleanup endpoint failed!",
+    );
+  }
 });
 
 BullMQWorker.on("error", (err: Error) => {

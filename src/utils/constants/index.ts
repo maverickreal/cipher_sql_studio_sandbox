@@ -5,10 +5,10 @@ export const KILL_SIGNALS_TO_INTERCEPT = [
   "UNCAUGHT_EXCEPTION",
 ];
 
-export const enum ENV_MODE {
-  DEV,
-  STAGING,
-  PROD,
+export enum ENV_MODE {
+  DEV = "DEV",
+  STAGING = "STAGING",
+  PROD = "PROD",
 }
 
 export const UNWANTED_SERVICE_TERMINATION_CODE = 1;
