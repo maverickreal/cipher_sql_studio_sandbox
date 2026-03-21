@@ -2,6 +2,20 @@
 
 BullMQ worker service that executes user-submitted SQL queries in isolated PostgreSQL sandboxes. Part of the [CipherSqlStudio](../cipher_sql_studio) online SQL learning platform.
 
+### **_I M P O R T A N T_** note for developers:
+
+To test/run the entire backend locally, all you need do is:
+
+1. Clone all the project repos:
+   - https://github.com/maverickreal/cipher_sql_studio
+   - https://github.com/maverickreal/cipher_sql_studio_sandbox
+   - https://github.com/maverickreal/cipher_sql_studio_api_gateway
+2. Run the following shell code, from within the orchestrator repo (cipher_sql_studio):
+   ```sh
+   chmod u+x ./init.dev.bash;
+   ./init.dev.bash;
+   ```
+
 ## Tech Stack
 
 | Technology        | Purpose              |
