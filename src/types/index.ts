@@ -29,8 +29,7 @@ interface AdminAssignmentSeedJobData {
 }
 
 interface AdminAssignmentSeedJobResult {
-  success: boolean;
-  error?: string;
+  success: true;
 }
 
 export {

@@ -4,7 +4,7 @@ import {
 } from "../../types";
 import DbPoolClient from "../../db";
 import { Job } from "bullmq";
-import { getSandboxDBSchemaIdForAssignment, SQLSanitiser } from "../../utils";
+import { getSandboxDBSchemaIdForAssignment } from "../../utils";
 import { envVars } from "../../config";
 
 class AdminSqlCodeExecutor {
@@ -46,10 +46,7 @@ class AdminSqlCodeExecutor {
     } catch (err) {
       await dbPoolClientInst.query("ROLLBACK;");
 
-      return {
-        success: false,
-        error: SQLSanitiser(err instanceof Error ? err.message : `${err}`),
-      };
+      throw err;
     } finally {
       dbPoolClientInst.release();
     }

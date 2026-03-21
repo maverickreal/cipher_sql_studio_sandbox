@@ -46,11 +46,42 @@ const BullMQWorker = new Worker<
   workerOpts,
 );
 
-BullMQWorker.on("completed", (job: SqlExecJob) => {
+BullMQWorker.on("completed", async (job: SqlExecJob) => {
   logger.info(
     { jobId: job.id, jobName: job.name },
     "Successfully finished job",
   );
+
+  if (job.name !== ADMIN_ASSIGNMENT_SEED_JOB_NAME) {
+    return;
+  }
+  const assignmentId = job.data.assignmentId;
+
+  try {
+    const schemaSetFlagResp = await fetch(
+      `${envVars.API_GATEWAY_URL}/internal/confirm/${assignmentId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "x-internal-api-key": envVars.INTERNAL_API_KEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    logger.info(
+      {
+        assignmentId,
+        status: schemaSetFlagResp.ok ? undefined : schemaSetFlagResp.status,
+      },
+      `${schemaSetFlagResp.ok ? "Success" : "Failure"} at confirming assignment schema ready!`,
+    );
+  } catch (err) {
+    logger.error(
+      { assignmentId, err },
+      "Failure while requesting the API Gateway 'internal confirm' API endpoint!",
+    );
+  }
 });
 
 BullMQWorker.on("failed", async (job: SqlExecJob | undefined, err: Error) => {
