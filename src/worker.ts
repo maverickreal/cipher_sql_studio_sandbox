@@ -155,13 +155,18 @@ BullMQWorker.on("ready", () => {
   logger.info({ queue: envVars.BULLMQ_SQL_QUEUE_NAME }, "BullMQ worker ready.");
 });
 
-KILL_SIGNALS_TO_INTERCEPT.forEach((event: string) =>
-  process.on(event, async () => {
-    logger.info({ queue: envVars.BULLMQ_SQL_QUEUE_NAME }, "Worker terminated");
+if (process.env.NODE_ENV !== "test") {
+  KILL_SIGNALS_TO_INTERCEPT.forEach((event: string) =>
+    process.on(event, async () => {
+      logger.info(
+        { queue: envVars.BULLMQ_SQL_QUEUE_NAME },
+        "Worker terminated",
+      );
 
-    await BullMQWorker.close();
-    await DbPoolClient.disconnect();
+      await BullMQWorker.close();
+      await DbPoolClient.disconnect();
 
-    process.exit(UNWANTED_SERVICE_TERMINATION_CODE);
-  }),
-);
+      process.exit(UNWANTED_SERVICE_TERMINATION_CODE);
+    }),
+  );
+}

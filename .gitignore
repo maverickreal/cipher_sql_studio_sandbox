@@ -1,7 +1,5 @@
 .env
-misc
 node_modules
 .DS_Store
-**/__tests__
 dist
 nodemon.json
