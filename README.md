@@ -1,6 +1,6 @@
 # CipherSqlStudio Sandbox Executor
 
-BullMQ worker service that executes user-submitted SQL queries in isolated PostgreSQL sandboxes. Part of the [CipherSqlStudio](../cipher_sql_studio) online SQL learning platform.
+BullMQ worker service that executes user-submitted SQL queries in isolated PostgreSQL sandboxes. Part of the online SQL learning platform.
 
 ### **_I M P O R T A N T_** note for developers:
 
